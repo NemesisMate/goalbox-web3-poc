@@ -1,0 +1,31 @@
+web3j:
+  client-address: http://${WEB3_CLIENT_HOST:localhost}:8545
+
+spring:
+  application:
+    name: goalbox-server
+  profiles:
+    active: ${PROFILE:local}
+  r2dbc:
+    initialization-mode: always
+    url: r2dbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/goalbox
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:postgres}
+
+springdoc:
+  api-docs:
+    path: /docs/api-docs
+  swagger-ui:
+    path: /docs/api-docs-ui
+
+management:
+  endpoint:
+    health:
+      enabled: true
+
+x:
+  account-keys:
+    system: 8f2a55949038a9610f50fb23b5883af3b4ecb3c3bb792cbcefbd1542c692be63
+  web3j:
+    client-address: ${WEB3_CLIENT_PROTO:http}://${WEB3_CLIENT_HOST:localhost}:${WEB3_CLIENT_PORT:8545}
+  chain-id: ${CHAIN_ID:1337}

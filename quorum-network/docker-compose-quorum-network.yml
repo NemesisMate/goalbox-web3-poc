@@ -1,0 +1,153 @@
+---
+version: '3.6'
+
+x-quorum-def:
+  &quorum-def
+  restart: "on-failure"
+  build:
+    context: config/goquorum
+    args:
+      QUORUM_VERSION: ${QUORUM_VERSION:-22.7.1}
+  expose:
+    - 30303
+    - 8545
+    - 9545
+  healthcheck:
+    test: ["CMD", "wget", "--spider", "--proxy", "off", "http://localhost:8545"]
+    interval: 3s
+    timeout: 3s
+    retries: 10
+    start_period: 5s
+
+x-tessera-def:
+  &tessera-def
+  build:
+    context: config/tessera
+    args:
+      TESSERA_VERSION: ${TESSERA_VERSION:-22.1.7}
+  environment:
+    TESSERA_MODE: tessera
+  expose:
+    - 9000
+    - 9080
+    - 9101
+  restart: "no"
+  healthcheck:
+    test: ["CMD", "wget", "--spider", "--proxy", "off", "http://localhost:9000/upcheck"]
+    interval: 3s
+    timeout: 3s
+    retries: 20
+    start_period: 5s
+
+services:
+  tessera1:
+    << : *tessera-def
+    container_name: tessera1
+    ports:
+      - 9081:9080
+    volumes:
+      - ./config/nodes/member1:/config/keys
+    networks:
+      quorum-network:
+        ipv4_address: 172.16.239.26
+
+  member1:
+    << : *quorum-def
+    container_name: member1
+    ports:
+      - 20000:8545/tcp
+      - 20001:8546/tcp
+      - 8545:8545/tcp
+      - 8546:8546/tcp
+      - 30303
+      - 9545
+    depends_on:
+      - tessera1
+    environment:
+      - QUORUM_PTM=tessera1
+    volumes:
+      - ./config/nodes/member1:/config/keys
+    networks:
+      quorum-network:
+        ipv4_address: 172.16.239.16
+
+  tessera2:
+    << : *tessera-def
+    container_name: tessera2
+    ports:
+      - 9082:9080
+    volumes:
+      - ./config/nodes/member2:/config/keys
+    networks:
+      quorum-network:
+        ipv4_address: 172.16.239.27
+
+  member2:
+    << : *quorum-def
+    container_name: member2
+    ports:
+      - '20002:8545/tcp'
+      - '20003:8546/tcp'
+      - '30303'
+      - '9545'
+    depends_on:
+      - tessera2
+    environment:
+      - QUORUM_PTM=tessera2
+    volumes:
+      - ./config/nodes/member2:/config/keys
+    networks:
+      quorum-network:
+        ipv4_address: 172.16.239.17
+
+  tessera-extra:
+    << : *tessera-def
+    profiles: ["extra"]
+    container_name: tessera-extra
+    ports:
+      - 9083:9080
+    volumes:
+      - ./config/nodes/memberExtra:/config/keys
+    networks:
+      quorum-network:
+        ipv4_address: 172.16.239.28
+
+  member-extra:
+    << : *quorum-def
+    profiles: ["extra"]
+    container_name: member-extra
+    ports:
+      - '20004:8545/tcp'
+      - '20005:8546/tcp'
+      - '30303'
+      - '9545'
+    depends_on:
+      - tessera-extra
+    environment:
+      - QUORUM_PTM=tessera-extra
+    volumes:
+      - ./config/nodes/memberExtra:/config/keys
+    networks:
+      quorum-network:
+        ipv4_address: 172.16.239.18
+
+  cakeshop:
+    image: quorumengineering/cakeshop:0.12.1
+    profiles: ["explorer"]
+    container_name: cakeshop
+    ports:
+      - '8999:8080'
+    entrypoint: ["java", "-Dcakeshop.initialnodes=/cakeshop/data/init/nodes.json", "-Dcakeshop.config.dir=/cakeshop/data", "-Dspring.config.additional-location=file:/cakeshop/data/local/", "-jar", "/cakeshop/cakeshop.war"]
+    volumes:
+      - ./config/cakeshop/data:/cakeshop/data/init
+    networks:
+      - quorum-network
+
+networks:
+  quorum-network:
+    name: quorum-network
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.16.239.0/24

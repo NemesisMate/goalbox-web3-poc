@@ -1,0 +1,12 @@
+[
+  {
+    "name": "member1",
+    "rpcUrl": "http://member1:8545",
+    "transactionManagerUrl": "http://localhost:9081"
+  },
+  {
+    "name": "member2",
+    "rpcUrl": "http://member2:8545",
+    "transactionManagerUrl": "http://127.0.0.1:9082"
+  }
+]

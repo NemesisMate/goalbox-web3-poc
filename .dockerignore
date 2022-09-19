@@ -1,0 +1,17 @@
+**/*.log
+
+goalbox-db/.data
+
+goalbox-contract/build
+goalbox-contract/migrations
+goalbox-contract/test
+goalbox-contract/truffle-config.js
+
+goalbox-dapp/build
+goalbox-dapp/node_modules
+
+goalbox-server/build
+goalbox-server/.gradle
+goalbox-server/gradle
+goalbox-server/gradlew
+goalbox-server/gradlew.bat

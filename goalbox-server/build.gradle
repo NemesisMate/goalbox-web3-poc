@@ -1,0 +1,109 @@
+plugins {
+	id 'java'
+	id 'idea'
+	id 'org.springframework.boot' version "${plugin_spring_boot_version}"
+	id 'io.spring.dependency-management' version "${plugin_spring_dependencies_version}"
+	id 'org.web3j' version "${plugin_web3j_version}"
+	id 'io.freefair.lombok' version "${plugin_lombok}"
+}
+
+group = 'io.github.nemesismate.goalbox'
+version = '1.0.0'
+sourceCompatibility = JavaVersion.VERSION_17
+
+idea {
+	module {
+		downloadJavadoc = true
+		downloadSources = true
+	}
+}
+
+configurations {
+	compileOnly {
+		extendsFrom annotationProcessor
+	}
+}
+
+compileJava {
+	options.compilerArgs += [
+			'-Amapstruct.defaultComponentModel=spring',
+			'-Amapstruct.unmappedTargetPolicy=ERROR',
+	]
+}
+
+repositories {
+	maven {
+		url 'https://hyperledger.jfrog.io/hyperledger/besu-maven'
+		content { includeGroupByRegex('org\\.hyperledger\\..*') }
+	}
+	maven {
+		url 'https://artifacts.consensys.net/public/maven/maven/'
+		content { includeGroupByRegex('tech\\.pegasys\\..*') }
+	}
+	maven {
+		url 'https://dl.cloudsmith.io/public/consensys/quorum-mainnet-launcher/maven/'
+		content { includeGroupByRegex('net\\.consensys\\..*') }
+	}
+	maven {
+		url 'https://splunk.jfrog.io/splunk/ext-releases-local'
+		content { includeGroupByRegex('com\\.splunk\\..*') }
+	}
+
+	mavenCentral()
+}
+
+dependencyLocking {
+	lockAllConfigurations()
+}
+
+jar {
+	enabled = false
+}
+
+var contractsPath = './build/contracts/solidity'
+
+copy {
+	from '../goalbox-contract/contracts'
+	into contractsPath
+}
+
+web3j {
+	generatedPackageName = "${group}.contracts"
+}
+
+sourceSets {
+    main.solidity.srcDir contractsPath
+    test.solidity.srcDir contractsPath
+}
+
+dependencies {
+	constraints {
+		annotationProcessor "org.mapstruct:mapstruct-processor:${lombok_version}"
+
+		implementation "org.mapstruct:mapstruct:${lombok_version}"
+		implementation "org.web3j:core:${web3j_version}"
+		implementation "org.springdoc:springdoc-openapi-webflux-ui:${springdoc_version}"
+
+		testImplementation "org.web3j:web3j-unit:${web3j_version}"
+		testImplementation "com.beust:klaxon:${klaxon_version}"
+	}
+
+	annotationProcessor 'org.mapstruct:mapstruct-processor'
+
+	implementation 'org.springframework.boot:spring-boot-starter-webflux'
+	implementation 'org.springframework.boot:spring-boot-starter-actuator'
+	implementation 'org.springframework.boot:spring-boot-starter-data-r2dbc'
+	implementation 'org.mapstruct:mapstruct'
+	implementation 'org.web3j:core'
+	implementation 'org.springdoc:springdoc-openapi-webflux-ui'
+
+	runtimeOnly 'org.postgresql:r2dbc-postgresql'
+
+	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+	testImplementation 'io.projectreactor:reactor-test'
+	testImplementation 'org.web3j:web3j-unit'
+}
+
+test {
+	useJUnitPlatform()
+}
