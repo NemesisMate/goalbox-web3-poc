@@ -1,3 +1,3 @@
 export class Metadata {
-    public static API_URL: String
+    public static API_URL = "http://localhost:8080"
 }
